@@ -48,6 +48,13 @@ static Node *term() {
     n->val = t->val;
     return n;
   }
+  if (t->ty == TK_IDENT) {
+    t = tokens->data[pos++];
+    Node *n = malloc(sizeof(Node));
+    n->ty = ND_IDENT;
+    n->name = t->val;
+    return n;
+  }
   err("invalid token %s", t->input);
   return NULL;
 }
@@ -114,13 +121,26 @@ static Node *equality() {
   }
 }
 
+Node *assign() {
+  Node *node = equality();
+  while (consume('='))
+    node = new_node('=', node, assign());
+  return node;
+}
+
+Node *stmt() {
+  Node *node = assign();
+  expect(';');
+  return node;
+}
+
 Vec *parse(Vec *tokens_) {
   tokens = tokens_;
   pos = 0;
   Vec *v = new_vec();
 
   while (!is_eof())
-    vec_push(v, equality());
+    vec_push(v, stmt());
 
   vec_push(v, NULL);
   return v;

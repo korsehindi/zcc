@@ -34,8 +34,13 @@ loop:
       s += len;
       goto loop;
     }
-    if (strchr("+-*/()", *s)) {
+    if (strchr("+-*/()=;", *s)) {
       add_token(v, *s, s);
+      s++;
+      continue;
+    }
+    if (isalpha(*s)) {
+      add_token(v, TK_IDENT, s);
       s++;
       continue;
     }

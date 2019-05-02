@@ -13,6 +13,7 @@ typedef struct {
 
 enum {
   TK_NUM = 256,
+  TK_IDENT,
   TK_EQ, // ==
   TK_NE, // !=
   TK_LE, // <=
@@ -30,6 +31,7 @@ typedef struct {
 
 enum {
   ND_NUM = 256,
+  ND_IDENT,
   ND_EQ, // ==
   ND_NE, // !=
   ND_L,  // <
@@ -39,6 +41,7 @@ enum {
 typedef struct Node {
   int ty;
   int val;
+  char name;
   struct Node *lhs;
   struct Node *rhs;
 } Node;

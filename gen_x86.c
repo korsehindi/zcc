@@ -15,9 +15,33 @@ static void tp(char *fmt, ...) {
   printf("\n");
 }
 
+void gen_lval(Node *node) {
+  if (node->ty != ND_IDENT)
+    err("not an lvalue");
+  int offset = ('z' - node->name + 1) * 8;
+  tp("mov rax, rbp");
+  tp("sub rax, %d", offset);
+  tp("push rax");
+}
+
 static void gen_code(Node *n) {
-  if (n->ty == ND_NUM) {
+  switch (n->ty) {
+  case ND_NUM:
     tp("push %d", n->val);
+    return;
+  case ND_IDENT:
+    gen_lval(n);
+    tp("pop rax");
+    tp("mov rax, [rax]");
+    tp("push rax");
+    return;
+  case '=':
+    gen_lval(n->lhs);
+    gen_code(n->rhs);
+    tp("pop rdi");
+    tp("pop rax");
+    tp("mov [rax], rdi");
+    tp("push rdi");
     return;
   }
 
