@@ -3,7 +3,7 @@
 Token tokens[100];
 int pos = 0;
 
-static Node *add();
+static Node *equality();
 
 void err(char *fmt, ...) {
   va_list ap;
@@ -43,13 +43,33 @@ static int consume(int ty) {
   return 1;
 }
 
+static struct {
+  char *name;
+  int ty;
+} symbols[] = {
+    {"==", TK_EQ}, {"!=", TK_NE}, {"<=", TK_LE}, {">=", TK_GE},
+    {"<", TK_L},   {">", TK_G},   {NULL, 0},
+};
+
 void tokenize(char *s) {
   int i = 0;
 
+loop:
   while (*s) {
     if (isspace(*s)) {
       s++;
       continue;
+    }
+    for (int j = 0; symbols[j].name; j++) {
+      char *name = symbols[j].name;
+      int len = strlen(name);
+      if (strncmp(s, name, len))
+        continue;
+      tokens[i].ty = symbols[j].ty;
+      tokens[i].input = s;
+      i++;
+      s += len;
+      goto loop;
     }
     if (strchr("+-*/()", *s)) {
       tokens[i].ty = *s;
@@ -74,7 +94,7 @@ void tokenize(char *s) {
 
 static Node *term() {
   if (consume('(')) {
-    Node *n = add();
+    Node *n = equality();
     if (!consume(')'))
       err(") expected, but got: %s", tokens[pos].input);
     return n;
@@ -125,6 +145,32 @@ static Node *add() {
   }
 }
 
+static Node *relational() {
+  Node *n = add();
+  for (;;) {
+    if (consume(TK_L))
+      n = new_node(ND_L, add(), n);
+    else if (consume(TK_LE))
+      n = new_node(ND_LE, add(), n);
+    else if (consume(TK_G))
+      n = new_node(ND_L, n, add());
+    else if (consume(TK_GE))
+      n = new_node(ND_LE, n, add());
+    return n;
+  }
+}
+
+static Node *equality() {
+  Node *n = relational();
+  for (;;) {
+    if (consume(TK_EQ))
+      n = new_node(ND_EQ, n, relational());
+    else if (consume(TK_NE))
+      n = new_node(ND_NE, n, relational());
+    return n;
+  }
+}
+
 void gen(Node *n) {
   if (n->ty == ND_NUM) {
     tp("push %d", n->val);
@@ -150,6 +196,26 @@ void gen(Node *n) {
     tp("mov rdx, 0");
     tp("div rdi");
     break;
+  case ND_EQ:
+    tp("cmp rdi, rax");
+    tp("sete al");
+    tp("movzx rax, al");
+    break;
+  case ND_NE:
+    tp("cmp rdi, rax");
+    tp("setne al");
+    tp("movzx rax, al");
+    break;
+  case ND_L:
+    tp("cmp rdi, rax");
+    tp("setl al");
+    tp("movzx rax, al");
+    break;
+  case ND_LE:
+    tp("cmp rdi, rax");
+    tp("setle al");
+    tp("movzx rax, al");
+    break;
   }
 
   tp("push rax");
@@ -160,7 +226,7 @@ int main(int argc, char **argv) {
     err("Usage: zcc <code>");
 
   tokenize(argv[1]);
-  Node *node = add();
+  Node *node = equality();
 
   p(".intel_syntax noprefix");
 
