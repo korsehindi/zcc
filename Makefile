@@ -18,4 +18,10 @@ clean:
 format:
 	clang-format -i *.c *.h
 
-.PHONY: test clean format
+docker_build:
+	docker build -t $(OUT) .
+
+docker_run:
+	docker run -v $(PWD):/home -it $(OUT) /bin/bash
+
+.PHONY: test clean format docker_build docker_run
