@@ -129,9 +129,16 @@ Node *assign() {
 }
 
 Node *stmt() {
-  Node *node = assign();
+  Node *n;
+  if (consume(TK_RETURN)) {
+    n = malloc(sizeof(Node));
+    n->ty = ND_RETURN;
+    n->lhs = assign();
+  } else {
+    n = assign();
+  }
   expect(';');
-  return node;
+  return n;
 }
 
 Vec *parse(Vec *tokens_) {

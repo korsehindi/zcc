@@ -20,6 +20,7 @@ enum {
   TK_GE, // >=
   TK_L,  // <
   TK_G,  // >
+  TK_RETURN,
   TK_EOF,
 };
 
@@ -36,6 +37,7 @@ enum {
   ND_NE, // !=
   ND_L,  // <
   ND_LE, // <=
+  ND_RETURN,
 };
 
 typedef struct Node {

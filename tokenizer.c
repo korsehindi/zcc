@@ -16,6 +16,11 @@ static Token *add_token(Vec *v, int ty, char *input) {
   return t;
 }
 
+static int is_alnum(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
+         ('0' <= c && c <= '9') || (c == '_');
+}
+
 Vec *tokenize(char *s) {
   Vec *v = new_vec();
 
@@ -33,6 +38,11 @@ loop:
       add_token(v, symbols[i].ty, s);
       s += len;
       goto loop;
+    }
+    if (strncmp(s, "return", 6) == 0 && !is_alnum(s[6])) {
+      add_token(v, TK_RETURN, s);
+      s += 6;
+      continue;
     }
     if (strchr("+-*/()=;", *s)) {
       add_token(v, *s, s);

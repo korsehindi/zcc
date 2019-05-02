@@ -35,6 +35,13 @@ static void gen_code(Node *n) {
     tp("mov rax, [rax]");
     tp("push rax");
     return;
+  case ND_RETURN:
+    gen_code(n->lhs);
+    tp("pop rax");
+    tp("mov rsp, rbp");
+    tp("pop rbp");
+    tp("ret");
+    return;
   case '=':
     gen_lval(n->lhs);
     gen_code(n->rhs);
