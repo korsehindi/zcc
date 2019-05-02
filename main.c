@@ -89,13 +89,25 @@ static Node *term() {
   return NULL;
 }
 
+Node *unary() {
+  if (consume('+'))
+    return term();
+  if (consume('-')) {
+    Node *n = malloc(sizeof(Node));
+    n->ty = ND_NUM;
+    n->val = 0;
+    return new_node('-', n, term());
+  }
+  return term();
+}
+
 static Node *mul() {
-  Node *n = term();
+  Node *n = unary();
   for (;;) {
     if (consume('*'))
-      n = new_node('*', n, term());
+      n = new_node('*', n, unary());
     else if (consume('/'))
-      n = new_node('/', n, term());
+      n = new_node('/', n, unary());
     else
       return n;
   }
