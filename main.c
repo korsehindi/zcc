@@ -27,6 +27,8 @@ int main(int argc, char **argv) {
   if (argc != 2)
     err("Usage: zcc <code>");
 
+  char *s = argv[1];
+
   p(".intel_syntax noprefix");
 
 #ifdef __APPLE__
@@ -37,7 +39,22 @@ int main(int argc, char **argv) {
   p("main:");
 #endif
 
-  tp("mov rax, %d", atoi(argv[1]));
-  tp("ret");
+  tp("mov rax, %ld", strtol(s, &s, 10));
+  while (*s) {
+    if (*s == '+') {
+      s++;
+      tp("add rax, %ld", strtol(s, &s, 10));
+      continue;
+    }
+    if (*s == '-') {
+      s++;
+      tp("sub rax, %ld", strtol(s, &s, 10));
+      continue;
+    }
+    err("can not tokenize: '%c'", *s);
+    return 1;
+  }
+
+  tp("  ret\n");
   return 0;
 }
