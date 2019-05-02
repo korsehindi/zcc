@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct {
+  void **data;
+  int len;
+  int cap;
+} Vec;
+
 enum {
   TK_NUM = 256,
   TK_EQ, // ==
@@ -35,3 +41,11 @@ typedef struct Node {
   struct Node *lhs;
   struct Node *rhs;
 } Node;
+
+// util.c
+void err(char *fmt, ...);
+Vec *new_vec();
+void vec_push(Vec *v, void *x);
+
+// util_test.c
+void util_test();

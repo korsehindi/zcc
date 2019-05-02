@@ -10,7 +10,7 @@ $(OUT): $(OBJS)
 $(OBJS): $(OUT).h
 
 test: $(OUT)
-	./test.sh
+	./$(OUT) -test && ./test.sh
 
 clean:
 	rm -f $(OUT) *.o

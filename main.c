@@ -1,17 +1,9 @@
 #include "zcc.h"
 
-Token tokens[100];
+Vec *tokens;
 int pos = 0;
 
 static Node *equality();
-
-void err(char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  exit(1);
-}
 
 static void p(char *fmt, ...) {
   va_list ap;
@@ -36,8 +28,16 @@ static Node *new_node(int op, Node *lhs, Node *rhs) {
   return n;
 }
 
+static void expect(int ty) {
+  Token *t = tokens->data[pos];
+  if (t->ty != ty)
+    err("%c expected, but got %c", ty, t->ty);
+  pos++;
+}
+
 static int consume(int ty) {
-  if (tokens[pos].ty != ty)
+  Token *t = tokens->data[pos];
+  if (t->ty != ty)
     return 0;
   pos++;
   return 1;
@@ -51,8 +51,16 @@ static struct {
     {"<", TK_L},   {">", TK_G},   {NULL, 0},
 };
 
-void tokenize(char *s) {
-  int i = 0;
+static Token *add_token(Vec *v, int ty, char *input) {
+  Token *t = malloc(sizeof(Token));
+  t->ty = ty;
+  t->input = input;
+  vec_push(v, t);
+  return t;
+}
+
+Vec *tokenize(char *s) {
+  Vec *v = new_vec();
 
 loop:
   while (*s) {
@@ -60,52 +68,48 @@ loop:
       s++;
       continue;
     }
-    for (int j = 0; symbols[j].name; j++) {
-      char *name = symbols[j].name;
+    for (int i = 0; symbols[i].name; i++) {
+      char *name = symbols[i].name;
       int len = strlen(name);
       if (strncmp(s, name, len))
         continue;
-      tokens[i].ty = symbols[j].ty;
-      tokens[i].input = s;
-      i++;
+      add_token(v, symbols[i].ty, s);
       s += len;
       goto loop;
     }
     if (strchr("+-*/()", *s)) {
-      tokens[i].ty = *s;
-      tokens[i].input = s;
-      i++;
+      add_token(v, *s, s);
       s++;
       continue;
     }
     if (isdigit(*s)) {
-      tokens[i].ty = TK_NUM;
-      tokens[i].input = s;
-      tokens[i].val = strtol(s, &s, 10);
-      i++;
+      Token *t = add_token(v, TK_NUM, s);
+      t->val = strtol(s, &s, 10);
       continue;
     }
     err("can not tokenize: '%s'", s);
   }
 
-  tokens[i].ty = TK_EOF;
-  tokens[i].input = s;
+  add_token(v, TK_EOF, s);
+  return v;
 }
 
 static Node *term() {
   if (consume('(')) {
     Node *n = equality();
-    if (!consume(')'))
-      err(") expected, but got: %s", tokens[pos].input);
+    expect(')');
     return n;
   }
-  if (tokens[pos].ty == TK_NUM) {
+  Token *t;
+  t = tokens->data[pos];
+  if (t->ty == TK_NUM) {
+    t = tokens->data[pos++];
     Node *n = malloc(sizeof(Node));
     n->ty = ND_NUM;
-    n->val = tokens[pos++].val;
+    n->val = t->val;
     return n;
   }
-  err("invalid token %s", tokens[pos].input);
+  err("invalid token %s", t->input);
   return NULL;
 }
 
@@ -225,7 +229,12 @@ int main(int argc, char **argv) {
   if (argc != 2)
     err("Usage: zcc <code>");
 
-  tokenize(argv[1]);
+  if (argc == 2 && !strcmp(argv[1], "-test")) {
+    util_test();
+    return 0;
+  }
+
+  tokens = tokenize(argv[1]);
   Node *node = equality();
 
   p(".intel_syntax noprefix");
