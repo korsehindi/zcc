@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,15 @@ typedef struct Node {
   struct Node *lhs;
   struct Node *rhs;
 } Node;
+
+// tokenizer.c
+Vec *tokenize(char *s);
+
+// parser.c
+Vec *parse(Vec *tokens);
+
+// gen_x86.c
+void gen_x86(Vec *prog);
 
 // util.c
 void err(char *fmt, ...);
